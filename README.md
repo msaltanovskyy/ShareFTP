@@ -1,7 +1,3 @@
-Sure! Here’s a brief explanation of your code that you can use for a `README.md` file:
-
----
-
 # File Transfer Client and Server
 
 This project implements a simple file transfer system using Python's socket programming. It consists of a client and a server that communicate over TCP to send and receive files.
