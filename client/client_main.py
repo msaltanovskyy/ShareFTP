@@ -57,16 +57,13 @@ def file_send():
                 print("File sent successfully.")
         address.close()  
 
-def file_rec():
-    print("Receiving files is handled by the server.")
-
 def chose_func():
-    options = input("Choose function (1-send, 2-rec): ")
+    options = input("Choose function (1-send, 2-not): ")
     match options:
         case "1":
             file_send()
         case "2":
-            file_rec()
+            pass
         case _:
             print("Choose a valid function!")
             chose_func()
