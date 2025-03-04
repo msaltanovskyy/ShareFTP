@@ -83,7 +83,10 @@ def file_send():
         file_path = file_find()
         if not file_path:
             return
-
+        
+        file_name = os.path.basename(file_path)
+        address.send(file_name.encode())
+        
         with open(file_path, "rb") as f:
             print("Sending file...")
             while (data := f.read(1024)):
