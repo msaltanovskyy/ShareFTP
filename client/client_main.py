@@ -1,5 +1,3 @@
-import socket
-import os
 from file import file_send
 
 def chose_func():

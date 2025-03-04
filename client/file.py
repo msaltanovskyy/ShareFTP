@@ -1,27 +1,36 @@
 import os
 from datetime import datetime
-from client.socket import create_socket
+from sockets import create_socket
+
+#chose save dir
+
+def chose_dir():
+    file_path = input("Choose directory(example: "'/home/'"): ")
+
+    if not file_path:
+        file_path = input("Choose directory(example: "'/home/'"): ")
+    
+    if not os.path.exists(file_path):
+        create_dir = input("Directory does not exist. Do you want to create it? (y/n): ")
+        if create_dir.lower() == 'y':
+            os.makedirs(file_path)
+            return file_path
+        else:
+            print("Please choose an existing directory.")
+            return False
+    return file_path
 
 #find file for send
 
 def file_find():
     
-    file_path = "/home/makson"  # Example path to save documents for sending to server
-    
     try:
         
+        file_path = chose_dir()
         files = os.listdir(file_path)
-        
         get_files_list(files,file_path)
 
-        #uantity_files = input("Quentity files: ")
-        
-        #for quntity_files in i: 
-            #  # File name
-            #arr_files = []
-            #arr_files.append[i]
-
-        file_name = input("Input file name: ")
+        file_name = input("\nInput file name: ")
         
         if file_name in files:
             full_file_path = os.path.join(file_path, file_name)  # Full path
@@ -36,7 +45,9 @@ def file_find():
         print("No permission to access this directory")
         return False
 
+
 #file send 
+
 
 def file_send():
     address = create_socket()
@@ -53,7 +64,9 @@ def file_send():
                 print("File sent successfully.")
         address.close()  
 
+
 #get files list from dir
+
 
 def get_files_list(files,file_path):
         print(f"Available quantity: {len(files)}")
@@ -66,5 +79,4 @@ def get_files_list(files,file_path):
             file_permissions = oct(file_stats.st_mode)[-3:]
             print("{:<10} {:<30} {:<15} {:<20}".format(file_id, file, file_permissions, file_date))
 
-def chose_files_dir():
-    pass
+    

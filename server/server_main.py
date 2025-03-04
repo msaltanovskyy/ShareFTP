@@ -3,6 +3,7 @@ import os
 
 
 def create_socket():
+    
     s = socket.socket()  
 
     port_input = input("Enter port to bind (default 8080): ")
@@ -14,8 +15,13 @@ def create_socket():
     s.bind((ip, port))
     print("Server started on {}:{}".format(ip, port))
     s.listen(5)
-
+    
     while True:
+        connect_client(s)
+
+
+def connect_client(s):
+        
         try:
             c, addr = s.accept()
             print("Client connected ip:<" + str(addr) + ">")
