@@ -21,7 +21,7 @@ def create_socket():
             print("Client connected ip:<" + str(addr) + ">")
             c.send(b"Hello, welcome to the server")
 
-            # Получаем имя файла
+            # recieve file
             file_name = c.recv(1024).decode()
             print(f"Receiving file: {file_name}")
 
