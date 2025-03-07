@@ -4,15 +4,11 @@ from abc import ABC, abstractmethod
 class IFile(ABC):
     
     @abstractmethod
-    def chose_file():
+    def select_dir():
         pass
     
     @abstractmethod
-    def check_correct_dir(dir):
-        pass
-    
-    @abstractmethod
-    def check_find():
+    def proof_correct_dir(dir):
         pass
     
     @abstractmethod
@@ -20,7 +16,7 @@ class IFile(ABC):
         pass
     
     @abstractmethod
-    def chose_file():
+    def select_file():
         pass
     
     @abstractmethod

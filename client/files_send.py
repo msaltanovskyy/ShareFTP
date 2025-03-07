@@ -2,120 +2,102 @@ import os
 from datetime import datetime
 from sockets import create_socket
 from interface.IFile import IFile
+from typing import List, Optional
+
 
 class FileHandler(IFile):
-    
-    def chose_dir(self):
+
+    def select_and_verify_dir(self) -> str:
         while True:
-            file_path = input("Choose directory (example: '/home/'): ").strip()
-            if not file_path:
+            dir_path = input("Select directory (example: '/home/'): ").strip()
+            if not dir_path:
                 print("Path cannot be empty.")
                 continue
 
-            file_path = os.path.abspath(file_path)
+            dir_path = os.path.abspath(dir_path)
 
-            if os.path.exists(file_path):
-                return file_path
+            if os.path.exists(dir_path):
+                if os.access(dir_path, os.R_OK):
+                    print(f"Selected directory: {dir_path}")
+                    return dir_path
+                else:
+                    print("No permission to access this directory.")
             else:
                 create_dir = input("Directory does not exist. Create it? (y/n): ").strip().lower()
                 if create_dir == 'y':
                     try:
-                        os.makedirs(file_path)
-                        print(f"Directory created: {file_path}")
-                        return file_path
+                        os.makedirs(dir_path)
+                        print(f"Directory created: {dir_path}")
+                        return dir_path
                     except Exception as e:
                         print(f"Error creating directory: {e}")
-                        return False
                 else:
                     print("Please choose an existing directory.")
 
-    def check_correct_dir(self, dir):
-        check_dir = input(f"Is this the correct directory '{dir}'? (y/n): ").strip().lower()
-        if check_dir == 'y':
-            return dir
-        else:
-            return self.chose_dir()
-
-    def check_find(self):
-        try:
-            dir = self.chose_dir()
-            file_path = self.check_correct_dir(dir)
-            if not file_path:
-                return False
-            return file_path
-        except FileNotFoundError:
-            print("Directory not found.")
-            return False
-        except PermissionError:
-            print("No permission to access this directory.")
-            return False
-
-    def chose_file(self):
-        file_path = self.check_find()
-        if not file_path:
-            return False
-
-        files = [f for f in os.listdir(file_path) if os.path.isfile(os.path.join(file_path, f))]
-        if not files:
-            print("No files in the directory.")
-            return False
-
-        self.get_files_list(files, file_path)
-
-        file_name = input("\nInput file name: ").strip()
-        if file_name in files:
-            full_file_path = os.path.join(file_path, file_name)
-            return full_file_path
-        else:
-            print("File not found.")
-            return False
-
-    def get_files_list(self, files, file_path):
-        print(f"\nAvailable quantity: {len(files)}\n")
+    def get_files_list(self, files: List[str], dir_path: str) -> None:
+        print(f"\nAvailable files: {len(files)}\n")
         print("{:<10} {:<30} {:<15} {:<20}".format("file_id", "name", "permissions", "date"))
         for file in files:
-            full_path = os.path.join(file_path, file)
+            full_path = os.path.join(dir_path, file)
             file_stats = os.stat(full_path)
             file_id = file_stats.st_ino
             file_date = datetime.fromtimestamp(file_stats.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
             file_permissions = oct(file_stats.st_mode)[-3:]
             print("{:<10} {:<30} {:<15} {:<20}".format(file_id, file, file_permissions, file_date))
 
-    def file_send_quantity(self, address):
-        quantity = input("Enter quantity of files (1): ").strip()
-        if not quantity:
-            quantity = 1
-        try:
-            quantity = int(quantity)
-        except ValueError:
-            print("Invalid quantity. Defaulting to 1.")
-            quantity = 1
-        address.sendall(str(quantity).encode())
-        return quantity
+    def select_files(self, dir_path: str) -> List[str]:
+        files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+        if not files:
+            print("No files in the directory.")
+            return []
 
-    def file_send(self, chose_func):
+        self.get_files_list(files, dir_path)
+
+        file_names = input("\nEnter file names to send (separated by commas): ").strip().split(',')
+        file_names = [name.strip() for name in file_names if name.strip()]
+
+        selected_files = []
+        for file_name in file_names:
+            if file_name in files:
+                selected_files.append(os.path.join(dir_path, file_name))
+            else:
+                print(f"File '{file_name}' not found in the directory.")
+
+        return selected_files
+
+    def send_files(self, address, files: List[str]) -> None:
+        quantity = len(files)
+        address.sendall(str(quantity).encode())
+
+        for file_path in files:
+            file_name = os.path.basename(file_path)
+            address.send(file_name.encode())
+
+            with open(file_path, "rb") as f:
+                print(f"Sending file {file_name}...")
+                while (data := f.read(1024)):
+                    address.sendall(data)
+                print(f"File {file_name} sent successfully.")
+
+    def file_send(self, chose_func) -> None:
         address = create_socket()
         if not address:
             print("Failed to create socket.")
             return
 
         try:
-            quantity = self.file_send_quantity(address)
-            for _ in range(quantity):
-                file_path = self.chose_file()
-                if not file_path:
-                    return
+            dir_path = self.select_and_verify_dir()
+            selected_files = self.select_files(dir_path)
 
-                file_name = os.path.basename(file_path)
-                address.send(file_name.encode())
+            if not selected_files:
+                print("No valid files selected. Aborting.")
+                return
 
-                with open(file_path, "rb") as f:
-                    print(f"Sending file {file_name}...")
-                    while (data := f.read(1024)):
-                        address.sendall(data)
-                    print(f"File {file_name} sent successfully.")
+            self.send_files(address, selected_files)
+
         except Exception as e:
             print(f"Error during file sending: {e}")
+
         finally:
             chose = input("Continue further (C) or close (Q)?: ").strip().lower()
             if chose == 'c':
