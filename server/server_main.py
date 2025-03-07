@@ -29,6 +29,7 @@ def connect_client(s):
 
             # recieve file
             file_name = c.recv(1024).decode()
+            
             print(f"Receiving file: {file_name}")
 
             with open(file_name, "wb") as f:
